@@ -4,8 +4,6 @@ from notion_kit import object as nobj
 from notion_pbar.push_api import PushProcess
 from notion_pbar.process_bar import ProcessBar
 
-from pprint import pprint
-
 class NotionProcessBar:
     @classmethod
     def Client(cls, token:str, database_url:str, interval:int=1)->None:
@@ -85,4 +83,5 @@ class NotionProcessBar:
         return ProcessBar(page_object=page_object,
                           total=total, name=name,
                           property_dict=cls.property_dict,
-                          request_method=cls.push_process.request)
+                          request_method=[cls.push_process.page_request,
+                                          cls.push_process.block_request] )

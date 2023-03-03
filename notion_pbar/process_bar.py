@@ -12,7 +12,7 @@ class ProcessBar:
                  total:int,
                  name:str, 
                  property_dict:dict[str, nobj.PropertyType],
-                 request_method:PushProcess.request
+                 request_method:list
                  ):
         self.page_object = page_object
         self.value = 0
@@ -24,15 +24,20 @@ class ProcessBar:
         for option in property_dict['Status'].Dict['status']['options']:
             self.STATUS_OPTIONS.update({option['name']: nobj.Option(**option)})
             
-        self.__request_method = request_method
+        self.__request_page = request_method[0]
+        self.__request_block = request_method[1]
     
     def __status_check(self)->None:
         if self.value > self.total:
             self.change_status(status=self.STATUS_OPTIONS['Error'])
             
-    def __request__(self)->None:
+    def __request_page__(self)->None:
         self.__status_check()
-        self.__request_method(self.page_object)
+        self.__request_page(self.page_object)
+    
+    def __request_block__(self, block_object)->None:
+        self.__request_block(id=self.page_object.id,
+                             block_object=block_object)
     
     def __iter__(self):
         return self
@@ -56,7 +61,7 @@ class ProcessBar:
         nkit.Gadget.update_page_property(page_object=self.page_object,
                                          property_name="Value",
                                          number=self.value)
-        self.__request__()
+        self.__request_page__()
     
     #-----------------[ Update property ]-----------------#
     def update_name(self, new_name:str)->None:
@@ -76,21 +81,17 @@ class ProcessBar:
                         property_value = gadget.get_object(value=property_value, type=property_type)
                     nkit.Gadget.update_page_property(self.page_object,
                                                      property_name,
-                                                     **{property_type:property_value}
+                                                     property_value
                                                      )
                 else:
                     ValueError(f"Property {property_name} is not exist.")
-            # Update the page
-            self.__request__()
 
     def update_checkbox(self, name:str, check:bool)->None:
         if name in list(self.property_dict.keys()):
             nkit.Gadget.update_page_property(self.page_object,
                                             name,
-                                            **{'checkbox':check}
+                                            check
                                             )
-            # Update the page
-            self.__request__()
         else:
             ValueError(f"Property {name} is not exist.")
 
@@ -104,10 +105,8 @@ class ProcessBar:
                 rich_text_object = nkit.Gadget.Object.get_rich_text(text=text)
             nkit.Gadget.update_page_property(self.page_object,
                                             name,
-                                            **{'rich_text':[rich_text_object]}
+                                            [rich_text_object]
                                             )
-            # Update the page
-            self.__request__()
         else:
             ValueError(f"Property {name} is not exist.")
             
@@ -121,10 +120,8 @@ class ProcessBar:
                 option_object = option
             nkit.Gadget.update_page_property(self.page_object,
                                             name,
-                                            **{'select':option_object}
+                                            option_object
                                             )
-            # Update the page
-            self.__request__()
         else:
             ValueError(f"Property {name} is not exist.")
     
@@ -140,14 +137,35 @@ class ProcessBar:
         elif self.value >= 1:
             self.change_status(status=self.STATUS_OPTIONS['In progress'])
         
-        if kwargs:
-            for name, value in kwargs.items():
-                if name in list(self.property_dict.keys()):
-                    nkit.Gadget.update_page_property(page_object=self.page_object,
-                                                     property_name=name,
-                                                     **{self.property_dict[name]: value}
-                                                     )
+        self.update_property(**kwargs)
+        
         # Update the page
-        self.__request__()
+        self.__request_page__()
 
+    def update_manual(self):
+        # Update the page
+        self.__request_page__()
+    
     #-----------------[ Add Block ]-----------------#
+    def add_text_block(self, 
+                       text:str="",
+                       rich_text_object:nobj.RichText | None = None)->None:
+        if rich_text_object is not None:
+            rich_text_object = rich_text_object
+        else:
+            rich_text_object = nkit.Gadget.Object.get_rich_text(text=text)
+            
+        block = nobj.Block(type="paragraph",
+                            paragraph=nobj.Paragraph(rich_text=[rich_text_object]))      
+        
+        # Update the page
+        self.__request_block__(block)
+        
+    def add_block(self, block_object:nobj.Block)->None:
+        """
+        Add a block to the process bar.
+        
+        Parameters
+            block_object:        (notion_kit.Object.Block)       - The block to add.
+        """
+        self.__request_block__(block_object)
