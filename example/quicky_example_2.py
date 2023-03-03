@@ -13,14 +13,23 @@ if __name__ == "__main__":
 
     # 3. init a client
     npbar.Client(token=token, database_url=database_url)
-    total = 20
+    total = 10
     name = "quicky test"
     pbar = npbar.set_pbar(total=total, name=name)
 
+    # 4. update exist property
+    ## 'Rich Text', 'Select' and 'Checkbox'
+    pbar.update_property(Text="Hello World!",
+                         Select="Option 1",
+                         Checkbox=True)
+    
     for i in range(total):
         print(i)
         pbar.update()
         time.sleep(1)
-
+        
+    pbar.update_checkbox(name='Checkbox', check=True)
+    pbar.update_select(name='Select', option='Option 2', color='red')
+    pbar.update_rich_text(name='text', text='Done')
     npbar.close()
         

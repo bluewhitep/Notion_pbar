@@ -17,8 +17,8 @@ class NotionProcessBar:
         database_object = nkit.Database.get_data(cls.database_id)
         ## Get database properties
         cls.property_dict = {} # {name:type}
-        for property in database_object.property_list():
-            cls.property_dict.update({property['name']: property['type']})
+        for name, property_type_object in database_object.properties.items():
+            cls.property_dict.update({name: property_type_object})
         
         # Init push process
         cls.push_process = PushProcess(token=token, interval=interval)
